@@ -10,6 +10,7 @@ import { AppError } from './errors.js';
 import { authRoutes } from './routes/auth.js';
 import { publicRoutes } from './routes/public.js';
 import { staffRoutes } from './routes/staff.js';
+import { adminRoutes } from './routes/admin.js';
 
 export async function buildApp(opts: { logger?: boolean; rateLimits?: boolean } = {}) {
   const app = Fastify({ logger: opts.logger ?? true, trustProxy: config.trustProxy, bodyLimit: 100_000 });
@@ -36,5 +37,6 @@ export async function buildApp(opts: { logger?: boolean; rateLimits?: boolean } 
   await app.register(authRoutes);
   await app.register(publicRoutes);
   await app.register(staffRoutes);
+  await app.register(adminRoutes);
   return app;
 }
