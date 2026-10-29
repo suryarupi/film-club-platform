@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { AppError } from '../errors.js';
 import { createBooking } from '../services/booking.js';
+import { validateFormData } from '../services/formFields.js';
 import { getScreening, getSeatMap, listScreenings } from '../services/screenings.js';
 import { cancelByToken, getTicketView } from '../services/tickets.js';
 
@@ -36,12 +37,13 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
     return { seats };
   });
 
-  // 60/min/IP: generous on purpose, because a whole hostel can share one campus-wifi IP.
+  // 60/min/IP: generous on purpose — a whole hostel can share one campus-wifi IP.
   app.post('/api/bookings', { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } }, async (req, reply) => {
     const key = z.string().uuid().safeParse(req.headers['idempotency-key']);
     if (!key.success) throw new AppError('MISSING_IDEMPOTENCY_KEY', 'Something went wrong. Please refresh and try again.', 400);
     const body = BookingBody.parse(req.body);
-    const result = await createBooking({ ...body, idempotencyKey: key.data });
+    const formData = await validateFormData(body.screeningId, body.formData ?? {});
+    const result = await createBooking({ ...body, formData, idempotencyKey: key.data });
     return reply.status(result.replayed ? 200 : 201).send(result);
   });
 
